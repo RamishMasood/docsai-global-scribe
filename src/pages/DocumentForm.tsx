@@ -11,7 +11,7 @@ import { toast } from "sonner";
 
 export default function DocumentForm() {
   const { id } = useParams<{ id: string }>();
-  const [document, setDocument] = useState<Document | null>(null);
+  const [documentData, setDocumentData] = useState<Document | null>(null);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { getDocumentById, createDocument, updateDocument } = useDocuments();
@@ -26,7 +26,7 @@ export default function DocumentForm() {
       const doc = await getDocumentById(id);
       
       if (doc) {
-        setDocument(doc);
+        setDocumentData(doc);
       } else {
         toast.error("Document not found");
         navigate("/documents");
@@ -44,25 +44,25 @@ export default function DocumentForm() {
       return;
     }
 
-    if (!document) return;
+    if (!documentData) return;
 
     // Check if premium access is required
-    if (document.is_premium && !hasAccess(document.pricing_tier)) {
+    if (documentData.is_premium && !hasAccess(documentData.pricing_tier)) {
       toast.error("Subscription required", {
-        description: `This is a ${document.pricing_tier} document. Please upgrade your subscription.`
+        description: `This is a ${documentData.pricing_tier} document. Please upgrade your subscription.`
       });
       navigate("/pricing");
       return;
     }
 
     // If document belongs to template (public user), create new document
-    if (document.user_id === "00000000-0000-0000-0000-000000000000") {
+    if (documentData.user_id === "00000000-0000-0000-0000-000000000000") {
       const newDoc = await createDocument({
-        title: document.title,
-        description: document.description,
-        document_type: document.document_type,
+        title: documentData.title,
+        description: documentData.description,
+        document_type: documentData.document_type,
         content,
-        regions: document.regions,
+        regions: documentData.regions,
         is_premium: false, // User's created document is not premium
       }, user.id);
 
@@ -72,33 +72,33 @@ export default function DocumentForm() {
       }
     } else {
       // Otherwise update existing document
-      const updatedDoc = await updateDocument(document.id, { content });
+      const updatedDoc = await updateDocument(documentData.id, { content });
       if (updatedDoc) {
-        setDocument(updatedDoc);
+        setDocumentData(updatedDoc);
         toast.success("Document saved successfully!");
       }
     }
   };
 
   const handleDownload = () => {
-    if (!document) return;
+    if (!documentData) return;
 
     // Create a downloadable text file
-    const content = JSON.stringify(document.content, null, 2);
+    const content = JSON.stringify(documentData.content, null, 2);
     const blob = new Blob([content], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = window.document.createElement('a');
     a.href = url;
-    a.download = `${document.title.replace(/\s+/g, '_')}.json`;
-    document.body.appendChild(a);
+    a.download = `${documentData.title.replace(/\s+/g, '_')}.json`;
+    window.document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
+    window.document.body.removeChild(a);
     URL.revokeObjectURL(url);
     
     toast.success("Document downloaded successfully!");
   };
 
-  const isPremiumLocked = document?.is_premium && user && !hasAccess(document.pricing_tier);
+  const isPremiumLocked = documentData?.is_premium && user && !hasAccess(documentData.pricing_tier);
 
   return (
     <Layout>
@@ -118,15 +118,15 @@ export default function DocumentForm() {
               variant="outline" 
               className="gap-2"
               onClick={handleDownload}
-              disabled={loading || !document}
+              disabled={loading || !documentData}
             >
               <Download size={16} />
               Download
             </Button>
             <Button 
               className="gap-2 bg-docsai-blue hover:bg-docsai-darkBlue"
-              onClick={() => document && handleSaveDocument(document.content)}
-              disabled={loading || !document || !user}
+              onClick={() => documentData && handleSaveDocument(documentData.content)}
+              disabled={loading || !documentData || !user}
             >
               <Save size={16} />
               Save Document
@@ -138,18 +138,18 @@ export default function DocumentForm() {
           <div className="flex justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-docsai-blue"></div>
           </div>
-        ) : document ? (
+        ) : documentData ? (
           <>
             <div className="mb-8">
-              <h1 className="text-3xl font-bold mb-2">{document.title}</h1>
-              <p className="text-gray-600">{document.description}</p>
+              <h1 className="text-3xl font-bold mb-2">{documentData.title}</h1>
+              <p className="text-gray-600">{documentData.description}</p>
             </div>
             
             {isPremiumLocked ? (
               <div className="p-6 bg-amber-50 border border-amber-200 rounded-md text-center">
                 <h2 className="text-2xl font-bold text-amber-700 mb-4">Premium Document</h2>
                 <p className="mb-4 text-amber-800">
-                  This document requires a {document.pricing_tier} subscription to edit and save.
+                  This document requires a {documentData.pricing_tier} subscription to edit and save.
                 </p>
                 <Button 
                   className="bg-amber-500 hover:bg-amber-600 text-white"
@@ -160,7 +160,7 @@ export default function DocumentForm() {
               </div>
             ) : (
               <DocumentFormGenerator 
-                document={document} 
+                document={documentData} 
                 onSave={handleSaveDocument}
                 readOnly={!user}
               />

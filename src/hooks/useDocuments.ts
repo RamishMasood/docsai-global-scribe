@@ -2,16 +2,31 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Json } from "@/integrations/supabase/types";
+
+// Define the valid document types from the database schema
+type DocumentType = 
+  | "nda"
+  | "employment_contract"
+  | "partnership_agreement"
+  | "rent_agreement"
+  | "invoice"
+  | "consulting_contract"
+  | "business_contract"
+  | "legal_notice";
+
+// Define the valid subscription tiers
+type PricingTier = "free" | "basic" | "premium";
 
 export interface Document {
   id: string;
   title: string;
   description: string;
-  document_type: string;
+  document_type: DocumentType;
   content: any;
   regions: string[];
   is_premium: boolean;
-  pricing_tier: 'free' | 'basic' | 'premium';
+  pricing_tier: PricingTier;
   user_id: string;
   created_at: string;
   updated_at: string;
@@ -86,9 +101,20 @@ export function useDocuments() {
 
   const createDocument = async (newDocument: Partial<Document>, userId: string) => {
     try {
+      // Ensure required fields are present
+      if (!newDocument.title || !newDocument.description || !newDocument.document_type) {
+        throw new Error("Document requires title, description, and document_type");
+      }
+
       const documentToInsert = {
-        ...newDocument,
-        user_id: userId,
+        title: newDocument.title,
+        description: newDocument.description,
+        document_type: newDocument.document_type as DocumentType,
+        content: newDocument.content || {},
+        regions: newDocument.regions || ['Global'],
+        is_premium: newDocument.is_premium || false,
+        pricing_tier: newDocument.pricing_tier || 'free',
+        user_id: userId
       };
 
       const { data, error } = await supabase
@@ -115,9 +141,15 @@ export function useDocuments() {
 
   const updateDocument = async (id: string, updates: Partial<Document>) => {
     try {
+      // Cast the document_type to ensure it matches the enum
+      const updatesToSubmit = {
+        ...updates,
+        document_type: updates.document_type as DocumentType
+      };
+
       const { data, error } = await supabase
         .from("documents")
-        .update(updates)
+        .update(updatesToSubmit)
         .eq("id", id)
         .select();
 
