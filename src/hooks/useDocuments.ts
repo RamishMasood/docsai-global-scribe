@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { PostgrestError } from "@supabase/supabase-js";
 
 export interface Document {
   id: string;
@@ -16,6 +17,19 @@ export interface Document {
   updated_at: string;
 }
 
+// Define the shape of our database for TypeScript
+interface Database {
+  public: {
+    Tables: {
+      documents: {
+        Row: Document;
+        Insert: Omit<Document, 'id' | 'created_at' | 'updated_at'> & { id?: string; created_at?: string; updated_at?: string };
+        Update: Partial<Document>;
+      };
+    };
+  };
+}
+
 export function useDocuments() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [publicTemplates, setPublicTemplates] = useState<Document[]>([]);
@@ -24,11 +38,10 @@ export function useDocuments() {
 
   const fetchPublicTemplates = async () => {
     try {
-      // Use type assertion to handle TypeScript issues
-      const { data, error } = await (supabase
+      const { data, error } = await (supabase as any)
         .from("documents")
         .select("*")
-        .eq("user_id", "00000000-0000-0000-0000-000000000000") as any);
+        .eq("user_id", "00000000-0000-0000-0000-000000000000");
 
       if (error) {
         throw error;
@@ -43,11 +56,11 @@ export function useDocuments() {
 
   const fetchUserDocuments = async (userId: string) => {
     try {
-      const { data, error } = await (supabase
+      const { data, error } = await (supabase as any)
         .from("documents")
         .select("*")
         .eq("user_id", userId)
-        .neq("user_id", "00000000-0000-0000-0000-000000000000") as any);
+        .neq("user_id", "00000000-0000-0000-0000-000000000000");
 
       if (error) {
         throw error;
@@ -64,11 +77,11 @@ export function useDocuments() {
 
   const getDocumentById = async (id: string) => {
     try {
-      const { data, error } = await (supabase
+      const { data, error } = await (supabase as any)
         .from("documents")
         .select("*")
         .eq("id", id)
-        .single() as any);
+        .single();
 
       if (error) {
         throw error;
@@ -77,8 +90,8 @@ export function useDocuments() {
       return data as Document;
     } catch (error: any) {
       console.error("Error fetching document:", error);
-      toast.error("Error", {
-        description: `Failed to fetch document: ${error.message}`
+      toast.error("Error fetching document", {
+        description: error.message
       });
       return null;
     }
@@ -91,25 +104,23 @@ export function useDocuments() {
         user_id: userId,
       };
 
-      const { data, error } = await (supabase
+      const { data, error } = await (supabase as any)
         .from("documents")
-        .insert(documentToInsert as any)
-        .select() as any);
+        .insert(documentToInsert)
+        .select();
 
       if (error) {
         throw error;
       }
 
       setDocuments((prev) => [...prev, data[0] as Document]);
-      toast.success("Success", {
-        description: "Document created successfully"
-      });
+      toast.success("Document created successfully");
       
       return data[0] as Document;
     } catch (error: any) {
       console.error("Error creating document:", error);
-      toast.error("Error", {
-        description: `Failed to create document: ${error.message}`
+      toast.error("Failed to create document", {
+        description: error.message
       });
       return null;
     }
@@ -117,11 +128,11 @@ export function useDocuments() {
 
   const updateDocument = async (id: string, updates: Partial<Document>) => {
     try {
-      const { data, error } = await (supabase
+      const { data, error } = await (supabase as any)
         .from("documents")
-        .update(updates as any)
+        .update(updates)
         .eq("id", id)
-        .select() as any);
+        .select();
 
       if (error) {
         throw error;
@@ -131,15 +142,13 @@ export function useDocuments() {
         prev.map((doc) => (doc.id === id ? { ...doc, ...data[0] } as Document : doc))
       );
       
-      toast.success("Success", {
-        description: "Document updated successfully"
-      });
+      toast.success("Document updated successfully");
       
       return data[0] as Document;
     } catch (error: any) {
       console.error("Error updating document:", error);
-      toast.error("Error", {
-        description: `Failed to update document: ${error.message}`
+      toast.error("Failed to update document", {
+        description: error.message
       });
       return null;
     }
@@ -147,10 +156,10 @@ export function useDocuments() {
 
   const deleteDocument = async (id: string) => {
     try {
-      const { error } = await (supabase
+      const { error } = await (supabase as any)
         .from("documents")
         .delete()
-        .eq("id", id) as any);
+        .eq("id", id);
 
       if (error) {
         throw error;
@@ -158,15 +167,13 @@ export function useDocuments() {
 
       setDocuments((prev) => prev.filter((doc) => doc.id !== id));
       
-      toast.success("Success", {
-        description: "Document deleted successfully"
-      });
+      toast.success("Document deleted successfully");
       
       return true;
     } catch (error: any) {
       console.error("Error deleting document:", error);
-      toast.error("Error", {
-        description: `Failed to delete document: ${error.message}`
+      toast.error("Failed to delete document", {
+        description: error.message
       });
       return false;
     }

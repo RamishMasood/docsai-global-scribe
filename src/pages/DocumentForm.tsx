@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
@@ -72,9 +71,7 @@ export default function DocumentForm() {
 
   const handleSave = async () => {
     if (!user) {
-      toast("Error", {
-        description: "You must be logged in to save documents"
-      });
+      toast.error("You must be logged in to save documents");
       return;
     }
 
