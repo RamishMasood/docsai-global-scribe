@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
@@ -263,171 +262,169 @@ export default function DocumentForm() {
             <TabsTrigger value="form">Form</TabsTrigger>
             <TabsTrigger value="preview">Preview</TabsTrigger>
           </TabsList>
-        </Tabs>
+          
+          <TabsContent value="form" className="mt-0 border-none p-0 shadow-none">
+            <Card>
+              <CardContent className="pt-6">
+                {document.fields.map(renderFormField)}
 
-        <TabsContent value="form" className="mt-0 border-none p-0 shadow-none">
-          <Card>
-            <CardContent className="pt-6">
-              {document.fields.map(renderFormField)}
+                <div className="mt-6 flex justify-end">
+                  <Button 
+                    onClick={handleGenerateDocument}
+                    className="bg-docsai-blue hover:bg-docsai-darkBlue"
+                  >
+                    Generate Document
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-              <div className="mt-6 flex justify-end">
-                <Button 
-                  onClick={handleGenerateDocument}
-                  className="bg-docsai-blue hover:bg-docsai-darkBlue"
-                >
-                  Generate Document
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="preview" className="mt-0 border-none p-0 shadow-none">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="mb-4 flex justify-end gap-2">
-                <Button variant="outline" className="gap-2">
-                  <Printer className="h-4 w-4" />
-                  Print
-                </Button>
-                <Button className="gap-2 bg-docsai-blue hover:bg-docsai-darkBlue">
-                  <Download className="h-4 w-4" />
-                  Download
-                </Button>
-              </div>
-
-              <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
-                <div className="mb-8 text-center">
-                  <h2 className="mb-2 text-2xl font-bold uppercase">{document.title}</h2>
-                  <Separator className="mx-auto my-4 w-1/4" />
+          <TabsContent value="preview" className="mt-0 border-none p-0 shadow-none">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="mb-4 flex justify-end gap-2">
+                  <Button variant="outline" className="gap-2">
+                    <Printer className="h-4 w-4" />
+                    Print
+                  </Button>
+                  <Button className="gap-2 bg-docsai-blue hover:bg-docsai-darkBlue">
+                    <Download className="h-4 w-4" />
+                    Download
+                  </Button>
                 </div>
 
-                <div className="space-y-6">
-                  {/* This is a simplified document preview - in a real app this would be more detailed and formatted */}
-                  <p className="mb-4">
-                    <strong>THIS {document.title.toUpperCase()}</strong> is made as of{" "}
-                    {formData.effectiveDate || formData.startDate || "[DATE]"} by and between:
-                  </p>
+                <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
+                  <div className="mb-8 text-center">
+                    <h2 className="mb-2 text-2xl font-bold uppercase">{document.title}</h2>
+                    <Separator className="mx-auto my-4 w-1/4" />
+                  </div>
 
-                  {formData.partyOne && (
-                    <div className="mb-4">
-                      <p className="font-semibold">{formData.partyOne}</p>
-                      <p>{formData.partyOneAddress || "[ADDRESS]"}</p>
-                      <p className="mt-2 italic">
-                        (hereinafter referred to as the "First Party")
-                      </p>
-                    </div>
-                  )}
+                  <div className="space-y-6">
+                    <p className="mb-4">
+                      <strong>THIS {document.title.toUpperCase()}</strong> is made as of{" "}
+                      {formData.effectiveDate || formData.startDate || "[DATE]"} by and between:
+                    </p>
 
-                  {formData.partyTwo && (
-                    <div className="mb-4">
-                      <p className="font-semibold">{formData.partyTwo}</p>
-                      <p>{formData.partyTwoAddress || "[ADDRESS]"}</p>
-                      <p className="mt-2 italic">
-                        (hereinafter referred to as the "Second Party")
-                      </p>
-                    </div>
-                  )}
-
-                  {(formData.employerName || formData.clientName) && (
-                    <div className="mb-4">
-                      <p className="font-semibold">{formData.employerName || formData.clientName}</p>
-                      <p>{formData.employerAddress || formData.clientAddress || "[ADDRESS]"}</p>
-                      <p className="mt-2 italic">
-                        (hereinafter referred to as the "{formData.employerName ? "Employer" : "Client"}")
-                      </p>
-                    </div>
-                  )}
-
-                  {(formData.employeeName || formData.consultantName) && (
-                    <div className="mb-4">
-                      <p className="font-semibold">{formData.employeeName || formData.consultantName}</p>
-                      <p>{formData.employeeAddress || formData.consultantAddress || "[ADDRESS]"}</p>
-                      <p className="mt-2 italic">
-                        (hereinafter referred to as the "{formData.employeeName ? "Employee" : "Consultant"}")
-                      </p>
-                    </div>
-                  )}
-
-                  {formData.landlordName && (
-                    <div className="mb-4">
-                      <p className="font-semibold">{formData.landlordName}</p>
-                      <p>{formData.landlordAddress || "[ADDRESS]"}</p>
-                      <p className="mt-2 italic">
-                        (hereinafter referred to as the "Landlord")
-                      </p>
-                    </div>
-                  )}
-
-                  {formData.tenantName && (
-                    <div className="mb-4">
-                      <p className="font-semibold">{formData.tenantName}</p>
-                      <p>{formData.tenantAddress || "[ADDRESS]"}</p>
-                      <p className="mt-2 italic">
-                        (hereinafter referred to as the "Tenant")
-                      </p>
-                    </div>
-                  )}
-
-                  {formData.purpose && (
-                    <div className="mb-4">
-                      <p className="font-semibold">Purpose:</p>
-                      <p>{formData.purpose}</p>
-                    </div>
-                  )}
-
-                  {formData.servicesDescription && (
-                    <div className="mb-4">
-                      <p className="font-semibold">Services Description:</p>
-                      <p>{formData.servicesDescription}</p>
-                    </div>
-                  )}
-
-                  {formData.term && (
-                    <div className="mb-4">
-                      <p className="font-semibold">Term:</p>
-                      <p>{formData.term} {parseInt(formData.term) === 1 ? "year" : "years"}</p>
-                    </div>
-                  )}
-
-                  {/* Additional sections would be included here based on document type */}
-                  <p className="text-gray-500">
-                    [Additional clauses and sections would be generated based on the document type and provided information]
-                  </p>
-
-                  <div className="mt-8">
-                    <p className="mb-4 font-semibold">IN WITNESS WHEREOF, the parties have executed this Agreement as of the date first above written.</p>
-                    
-                    <div className="mt-12 grid grid-cols-2 gap-12">
-                      <div>
-                        <p className="mb-8 border-b border-gray-400 pb-2">Signature</p>
-                        <p className="font-medium">
-                          {formData.partyOne || formData.employerName || formData.landlordName || formData.clientName || "First Party"}
+                    {formData.partyOne && (
+                      <div className="mb-4">
+                        <p className="font-semibold">{formData.partyOne}</p>
+                        <p>{formData.partyOneAddress || "[ADDRESS]"}</p>
+                        <p className="mt-2 italic">
+                          (hereinafter referred to as the "First Party")
                         </p>
                       </div>
-                      <div>
-                        <p className="mb-8 border-b border-gray-400 pb-2">Signature</p>
-                        <p className="font-medium">
-                          {formData.partyTwo || formData.employeeName || formData.tenantName || formData.consultantName || "Second Party"}
+                    )}
+
+                    {formData.partyTwo && (
+                      <div className="mb-4">
+                        <p className="font-semibold">{formData.partyTwo}</p>
+                        <p>{formData.partyTwoAddress || "[ADDRESS]"}</p>
+                        <p className="mt-2 italic">
+                          (hereinafter referred to as the "Second Party")
                         </p>
+                      </div>
+                    )}
+
+                    {(formData.employerName || formData.clientName) && (
+                      <div className="mb-4">
+                        <p className="font-semibold">{formData.employerName || formData.clientName}</p>
+                        <p>{formData.employerAddress || formData.clientAddress || "[ADDRESS]"}</p>
+                        <p className="mt-2 italic">
+                          (hereinafter referred to as the "{formData.employerName ? "Employer" : "Client"}")
+                        </p>
+                      </div>
+                    )}
+
+                    {(formData.employeeName || formData.consultantName) && (
+                      <div className="mb-4">
+                        <p className="font-semibold">{formData.employeeName || formData.consultantName}</p>
+                        <p>{formData.employeeAddress || formData.consultantAddress || "[ADDRESS]"}</p>
+                        <p className="mt-2 italic">
+                          (hereinafter referred to as the "{formData.employeeName ? "Employee" : "Consultant"}")
+                        </p>
+                      </div>
+                    )}
+
+                    {formData.landlordName && (
+                      <div className="mb-4">
+                        <p className="font-semibold">{formData.landlordName}</p>
+                        <p>{formData.landlordAddress || "[ADDRESS]"}</p>
+                        <p className="mt-2 italic">
+                          (hereinafter referred to as the "Landlord")
+                        </p>
+                      </div>
+                    )}
+
+                    {formData.tenantName && (
+                      <div className="mb-4">
+                        <p className="font-semibold">{formData.tenantName}</p>
+                        <p>{formData.tenantAddress || "[ADDRESS]"}</p>
+                        <p className="mt-2 italic">
+                          (hereinafter referred to as the "Tenant")
+                        </p>
+                      </div>
+                    )}
+
+                    {formData.purpose && (
+                      <div className="mb-4">
+                        <p className="font-semibold">Purpose:</p>
+                        <p>{formData.purpose}</p>
+                      </div>
+                    )}
+
+                    {formData.servicesDescription && (
+                      <div className="mb-4">
+                        <p className="font-semibold">Services Description:</p>
+                        <p>{formData.servicesDescription}</p>
+                      </div>
+                    )}
+
+                    {formData.term && (
+                      <div className="mb-4">
+                        <p className="font-semibold">Term:</p>
+                        <p>{formData.term} {parseInt(formData.term) === 1 ? "year" : "years"}</p>
+                      </div>
+                    )}
+
+                    <p className="text-gray-500">
+                      [Additional clauses and sections would be generated based on the document type and provided information]
+                    </p>
+
+                    <div className="mt-8">
+                      <p className="mb-4 font-semibold">IN WITNESS WHEREOF, the parties have executed this Agreement as of the date first above written.</p>
+                      
+                      <div className="mt-12 grid grid-cols-2 gap-12">
+                        <div>
+                          <p className="mb-8 border-b border-gray-400 pb-2">Signature</p>
+                          <p className="font-medium">
+                            {formData.partyOne || formData.employerName || formData.landlordName || formData.clientName || "First Party"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="mb-8 border-b border-gray-400 pb-2">Signature</p>
+                          <p className="font-medium">
+                            {formData.partyTwo || formData.employeeName || formData.tenantName || formData.consultantName || "Second Party"}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="mt-6 flex justify-between">
-                <Button variant="outline" onClick={() => setActiveTab("form")}>
-                  Back to Form
-                </Button>
-                <Button className="gap-2 bg-docsai-blue hover:bg-docsai-darkBlue">
-                  <Download className="h-4 w-4" />
-                  Download Document
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                <div className="mt-6 flex justify-between">
+                  <Button variant="outline" onClick={() => setActiveTab("form")}>
+                    Back to Form
+                  </Button>
+                  <Button className="gap-2 bg-docsai-blue hover:bg-docsai-darkBlue">
+                    <Download className="h-4 w-4" />
+                    Download Document
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </Layout>
   );
