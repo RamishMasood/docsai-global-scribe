@@ -7,10 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Search, Plus, Filter } from "lucide-react";
 import { useDocuments } from "@/hooks/useDocuments";
 import { useAuth } from "@/context/AuthContext";
-import { RequireAuth } from "@/components/auth/RequireAuth";
 import { RegionFilter } from "@/components/documents/RegionFilter";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Documents() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -21,10 +21,15 @@ export default function Documents() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchPublicTemplates();
-    if (user) {
-      fetchUserDocuments(user.id);
-    }
+    // Fetch public templates regardless of login state
+    const loadData = async () => {
+      await fetchPublicTemplates();
+      if (user) {
+        await fetchUserDocuments(user.id);
+      }
+    };
+    
+    loadData();
   }, [user]);
 
   // Filter documents based on search query, selected category, and selected region
@@ -39,6 +44,21 @@ export default function Documents() {
   // Group documents by premium status
   const premiumDocuments = filteredDocuments.filter(doc => doc.is_premium);
   const freeDocuments = filteredDocuments.filter(doc => !doc.is_premium);
+
+  // Loading skeletons for cards
+  const SkeletonCards = () => (
+    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {[1, 2, 3, 4, 5, 6].map((item) => (
+        <div key={item} className="h-64 rounded-md border p-4">
+          <Skeleton className="h-8 w-8 mb-4" />
+          <Skeleton className="h-4 w-3/4 mb-2" />
+          <Skeleton className="h-3 w-full mb-4" />
+          <Skeleton className="h-20 w-full mb-4" />
+          <Skeleton className="h-8 w-full" />
+        </div>
+      ))}
+    </div>
+  );
 
   return (
     <Layout>
@@ -72,28 +92,30 @@ export default function Documents() {
             />
           </div>
           
-          <div className="flex gap-4 items-center">
+          <div className="flex flex-col sm:flex-row gap-4 items-center w-full md:w-auto">
             <RegionFilter 
               selectedRegion={selectedRegion}
               onChange={setSelectedRegion}
             />
             
-            <Tabs 
-              defaultValue="all" 
-              className="w-full md:w-auto"
-              value={selectedCategory}
-              onValueChange={setSelectedCategory}
-            >
-              <TabsList className="grid grid-cols-3 md:grid-cols-7">
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="nda">NDAs</TabsTrigger>
-                <TabsTrigger value="employment_contract">Employment</TabsTrigger>
-                <TabsTrigger value="partnership_agreement">Partnership</TabsTrigger>
-                <TabsTrigger value="rent_agreement">Rental</TabsTrigger>
-                <TabsTrigger value="invoice">Invoices</TabsTrigger>
-                <TabsTrigger value="consulting_contract">Consulting</TabsTrigger>
-              </TabsList>
-            </Tabs>
+            <div className="overflow-x-auto w-full sm:w-auto">
+              <Tabs 
+                defaultValue="all" 
+                className="w-full"
+                value={selectedCategory}
+                onValueChange={setSelectedCategory}
+              >
+                <TabsList className="inline-flex w-auto min-w-full sm:min-w-0 overflow-x-auto no-scrollbar">
+                  <TabsTrigger value="all">All</TabsTrigger>
+                  <TabsTrigger value="nda">NDAs</TabsTrigger>
+                  <TabsTrigger value="employment_contract">Employment</TabsTrigger>
+                  <TabsTrigger value="partnership_agreement">Partnership</TabsTrigger>
+                  <TabsTrigger value="rent_agreement">Rental</TabsTrigger>
+                  <TabsTrigger value="invoice">Invoices</TabsTrigger>
+                  <TabsTrigger value="consulting_contract">Consulting</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
           </div>
         </div>
 
@@ -122,8 +144,11 @@ export default function Documents() {
         )}
 
         {loading ? (
-          <div className="flex justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-docsai-blue"></div>
+          <div className="space-y-8">
+            <div>
+              <h2 className="text-2xl font-bold mb-4">Templates</h2>
+              <SkeletonCards />
+            </div>
           </div>
         ) : (
           <div className="space-y-8">

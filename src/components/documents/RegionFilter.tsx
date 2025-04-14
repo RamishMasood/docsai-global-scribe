@@ -1,6 +1,5 @@
 
-import { useState } from "react";
-import { Check, Globe } from "lucide-react";
+import { Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -30,21 +29,23 @@ export function RegionFilter({ selectedRegion, onChange }: RegionFilterProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="flex gap-2">
-          <Globe className="h-4 w-4" />
-          {selectedRegion || "All Regions"}
+        <Button variant="outline" className="flex gap-2 w-full sm:w-auto justify-between">
+          <div className="flex items-center gap-2">
+            <Globe className="h-4 w-4" />
+            <span className="truncate max-w-[120px]">{selectedRegion || "All Regions"}</span>
+          </div>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56">
         <DropdownMenuLabel>Filter by Region</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => onChange("")}>
-          {!selectedRegion && <Check className="mr-2 h-4 w-4" />}
+          {!selectedRegion && <span className="mr-2">✓</span>}
           <span>All Regions</span>
         </DropdownMenuItem>
         {regions.map((region) => (
           <DropdownMenuItem key={region} onClick={() => onChange(region)}>
-            {selectedRegion === region && <Check className="mr-2 h-4 w-4" />}
+            {selectedRegion === region && <span className="mr-2">✓</span>}
             <span>{region}</span>
           </DropdownMenuItem>
         ))}

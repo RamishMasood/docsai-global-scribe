@@ -39,6 +39,7 @@ export function useDocuments() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchPublicTemplates = async () => {
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from("documents")
@@ -50,13 +51,16 @@ export function useDocuments() {
       }
 
       setPublicTemplates(data as Document[] || []);
+      setLoading(false);
     } catch (error: any) {
       console.error("Error fetching public templates:", error);
       setError(error.message);
+      setLoading(false);
     }
   };
 
   const fetchUserDocuments = async (userId: string) => {
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from("documents")
@@ -109,7 +113,7 @@ export function useDocuments() {
       const documentToInsert = {
         title: newDocument.title,
         description: newDocument.description,
-        document_type: newDocument.document_type as DocumentType,
+        document_type: newDocument.document_type,
         content: newDocument.content || {},
         regions: newDocument.regions || ['Global'],
         is_premium: newDocument.is_premium || false,
@@ -141,15 +145,9 @@ export function useDocuments() {
 
   const updateDocument = async (id: string, updates: Partial<Document>) => {
     try {
-      // Cast the document_type to ensure it matches the enum
-      const updatesToSubmit = {
-        ...updates,
-        document_type: updates.document_type as DocumentType
-      };
-
       const { data, error } = await supabase
         .from("documents")
-        .update(updatesToSubmit)
+        .update(updates)
         .eq("id", id)
         .select();
 

@@ -25,13 +25,13 @@ export function DocumentCard({ id, title, description, isPremium = false, region
             <Badge className="bg-amber-500 text-white hover:bg-amber-600">Premium</Badge>
           )}
         </div>
-        <CardTitle className="text-xl">{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
+        <CardTitle className="text-xl line-clamp-2">{title}</CardTitle>
+        <CardDescription className="line-clamp-3">{description}</CardDescription>
       </CardHeader>
       <CardContent className="flex-1">
         <div className="flex flex-wrap gap-1">
           {regions.map((region) => (
-            <Badge key={region} variant="outline" className="bg-white">
+            <Badge key={region} variant="outline" className="bg-white text-xs mb-1">
               {region}
             </Badge>
           ))}
