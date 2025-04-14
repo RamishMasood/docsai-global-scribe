@@ -1,7 +1,7 @@
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 export interface Document {
   id: string;
@@ -33,7 +33,7 @@ export function useDocuments() {
         throw error;
       }
 
-      setPublicTemplates(data || []);
+      setPublicTemplates(data as Document[] || []);
     } catch (error: any) {
       console.error("Error fetching public templates:", error);
       setError(error.message);
@@ -52,7 +52,7 @@ export function useDocuments() {
         throw error;
       }
 
-      setDocuments(data || []);
+      setDocuments(data as Document[] || []);
       setLoading(false);
     } catch (error: any) {
       console.error("Error fetching user documents:", error);
@@ -73,13 +73,12 @@ export function useDocuments() {
         throw error;
       }
 
-      return data;
+      return data as Document;
     } catch (error: any) {
       console.error("Error fetching document:", error);
       toast({
         title: "Error",
         description: `Failed to fetch document: ${error.message}`,
-        variant: "destructive",
       });
       return null;
     }
@@ -87,31 +86,32 @@ export function useDocuments() {
 
   const createDocument = async (newDocument: Partial<Document>, userId: string) => {
     try {
+      const documentToInsert = {
+        ...newDocument,
+        user_id: userId,
+      };
+
       const { data, error } = await supabase
         .from("documents")
-        .insert({
-          ...newDocument,
-          user_id: userId,
-        })
+        .insert(documentToInsert)
         .select();
 
       if (error) {
         throw error;
       }
 
-      setDocuments((prev) => [...prev, data[0]]);
+      setDocuments((prev) => [...prev, data[0] as Document]);
       toast({
         title: "Success",
         description: "Document created successfully",
       });
       
-      return data[0];
+      return data[0] as Document;
     } catch (error: any) {
       console.error("Error creating document:", error);
       toast({
         title: "Error",
         description: `Failed to create document: ${error.message}`,
-        variant: "destructive",
       });
       return null;
     }
@@ -130,7 +130,7 @@ export function useDocuments() {
       }
 
       setDocuments((prev) =>
-        prev.map((doc) => (doc.id === id ? { ...doc, ...data[0] } : doc))
+        prev.map((doc) => (doc.id === id ? { ...doc, ...(data[0] as Document) } : doc))
       );
       
       toast({
@@ -138,13 +138,12 @@ export function useDocuments() {
         description: "Document updated successfully",
       });
       
-      return data[0];
+      return data[0] as Document;
     } catch (error: any) {
       console.error("Error updating document:", error);
       toast({
         title: "Error",
         description: `Failed to update document: ${error.message}`,
-        variant: "destructive",
       });
       return null;
     }
@@ -174,7 +173,6 @@ export function useDocuments() {
       toast({
         title: "Error",
         description: `Failed to delete document: ${error.message}`,
-        variant: "destructive",
       });
       return false;
     }
