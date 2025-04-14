@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
@@ -10,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { useDocuments, Document } from "@/hooks/useDocuments";
 import { useAuth } from "@/context/AuthContext";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { ArrowLeft, Save } from "lucide-react";
 
 export default function DocumentForm() {
@@ -71,9 +72,8 @@ export default function DocumentForm() {
 
   const handleSave = async () => {
     if (!user) {
-      toast({
-        title: "Error",
-        description: "You must be logged in to save documents",
+      toast("Error", {
+        description: "You must be logged in to save documents"
       });
       return;
     }

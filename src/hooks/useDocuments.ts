@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 export interface Document {
   id: string;
@@ -24,10 +24,11 @@ export function useDocuments() {
 
   const fetchPublicTemplates = async () => {
     try {
+      // Use type assertion to work around TypeScript issues with Supabase types
       const { data, error } = await supabase
         .from("documents")
         .select("*")
-        .eq("user_id", "00000000-0000-0000-0000-000000000000");
+        .eq("user_id", "00000000-0000-0000-0000-000000000000") as any;
 
       if (error) {
         throw error;
@@ -46,7 +47,7 @@ export function useDocuments() {
         .from("documents")
         .select("*")
         .eq("user_id", userId)
-        .neq("user_id", "00000000-0000-0000-0000-000000000000");
+        .neq("user_id", "00000000-0000-0000-0000-000000000000") as any;
 
       if (error) {
         throw error;
@@ -67,7 +68,7 @@ export function useDocuments() {
         .from("documents")
         .select("*")
         .eq("id", id)
-        .single();
+        .single() as any;
 
       if (error) {
         throw error;
@@ -76,9 +77,8 @@ export function useDocuments() {
       return data as Document;
     } catch (error: any) {
       console.error("Error fetching document:", error);
-      toast({
-        title: "Error",
-        description: `Failed to fetch document: ${error.message}`,
+      toast("Error", {
+        description: `Failed to fetch document: ${error.message}`
       });
       return null;
     }
@@ -93,25 +93,23 @@ export function useDocuments() {
 
       const { data, error } = await supabase
         .from("documents")
-        .insert(documentToInsert)
-        .select();
+        .insert(documentToInsert as any)
+        .select() as any;
 
       if (error) {
         throw error;
       }
 
       setDocuments((prev) => [...prev, data[0] as Document]);
-      toast({
-        title: "Success",
-        description: "Document created successfully",
+      toast("Success", {
+        description: "Document created successfully"
       });
       
       return data[0] as Document;
     } catch (error: any) {
       console.error("Error creating document:", error);
-      toast({
-        title: "Error",
-        description: `Failed to create document: ${error.message}`,
+      toast("Error", {
+        description: `Failed to create document: ${error.message}`
       });
       return null;
     }
@@ -121,29 +119,27 @@ export function useDocuments() {
     try {
       const { data, error } = await supabase
         .from("documents")
-        .update(updates)
+        .update(updates as any)
         .eq("id", id)
-        .select();
+        .select() as any;
 
       if (error) {
         throw error;
       }
 
       setDocuments((prev) =>
-        prev.map((doc) => (doc.id === id ? { ...doc, ...(data[0] as Document) } : doc))
+        prev.map((doc) => (doc.id === id ? { ...doc, ...data[0] } as Document : doc))
       );
       
-      toast({
-        title: "Success",
-        description: "Document updated successfully",
+      toast("Success", {
+        description: "Document updated successfully"
       });
       
       return data[0] as Document;
     } catch (error: any) {
       console.error("Error updating document:", error);
-      toast({
-        title: "Error",
-        description: `Failed to update document: ${error.message}`,
+      toast("Error", {
+        description: `Failed to update document: ${error.message}`
       });
       return null;
     }
@@ -154,7 +150,7 @@ export function useDocuments() {
       const { error } = await supabase
         .from("documents")
         .delete()
-        .eq("id", id);
+        .eq("id", id) as any;
 
       if (error) {
         throw error;
@@ -162,17 +158,15 @@ export function useDocuments() {
 
       setDocuments((prev) => prev.filter((doc) => doc.id !== id));
       
-      toast({
-        title: "Success",
-        description: "Document deleted successfully",
+      toast("Success", {
+        description: "Document deleted successfully"
       });
       
       return true;
     } catch (error: any) {
       console.error("Error deleting document:", error);
-      toast({
-        title: "Error",
-        description: `Failed to delete document: ${error.message}`,
+      toast("Error", {
+        description: `Failed to delete document: ${error.message}`
       });
       return false;
     }

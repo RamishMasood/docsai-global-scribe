@@ -3,7 +3,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
 import { useNavigate } from "react-router-dom";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 
 type AuthContextType = {
   session: Session | null;
@@ -30,14 +30,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(newSession?.user ?? null);
         
         if (event === 'SIGNED_IN') {
-          toast({
-            title: "Welcome back!",
-            description: "You have successfully signed in.",
+          toast("Welcome back!", {
+            description: "You have successfully signed in."
           });
         } else if (event === 'SIGNED_OUT') {
-          toast({
-            title: "Signed out",
-            description: "You have been signed out successfully.",
+          toast("Signed out", {
+            description: "You have been signed out successfully."
           });
         }
       }
@@ -68,10 +66,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       navigate("/documents");
     } catch (error: any) {
-      toast({
-        title: "Sign in failed",
+      toast("Sign in failed", {
         description: error.message || "Failed to sign in. Please try again.",
-        variant: "destructive",
+        variant: "destructive"
       });
       throw error;
     }
@@ -95,17 +92,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw error;
       }
 
-      toast({
-        title: "Account created",
-        description: "Please check your email to confirm your account.",
+      toast("Account created", {
+        description: "Please check your email to confirm your account."
       });
       
       navigate("/login");
     } catch (error: any) {
-      toast({
-        title: "Sign up failed",
+      toast("Sign up failed", {
         description: error.message || "Failed to create account. Please try again.",
-        variant: "destructive",
+        variant: "destructive"
       });
       throw error;
     }
@@ -116,10 +111,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await supabase.auth.signOut();
       navigate("/");
     } catch (error: any) {
-      toast({
-        title: "Sign out failed",
+      toast("Sign out failed", {
         description: error.message || "Failed to sign out. Please try again.",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
