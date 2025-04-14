@@ -1,221 +1,200 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RequireAuth } from "@/components/auth/RequireAuth";
-import { useDocuments, Document } from "@/hooks/useDocuments";
+import { ArrowLeft, Save, Download, Share } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useDocuments, Document } from "@/hooks/useDocuments";
+import { useSubscription } from "@/hooks/useSubscription";
+import { DocumentFormGenerator } from "@/components/documents/DocumentFormGenerator";
 import { toast } from "sonner";
-import { ArrowLeft, Save } from "lucide-react";
 
 export default function DocumentForm() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
+  const [document, setDocument] = useState<Document | null>(null);
+  const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { getDocumentById, createDocument, updateDocument } = useDocuments();
-  const [document, setDocument] = useState<Partial<Document>>({
-    title: "",
-    description: "",
-    document_type: "legal",
-    content: {},
-    regions: [],
-  });
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const isNew = id === "new";
+  const { hasAccess } = useSubscription(user?.id);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    async function loadDocument() {
-      if (!isNew && id) {
-        const doc = await getDocumentById(id);
-        if (doc) {
-          setDocument(doc);
-        } else {
-          navigate("/documents");
-        }
+    const loadDocument = async () => {
+      if (!id) return;
+      
+      setLoading(true);
+      const doc = await getDocumentById(id);
+      
+      if (doc) {
+        setDocument(doc);
+      } else {
+        toast.error("Document not found");
+        navigate("/documents");
       }
       setLoading(false);
-    }
+    };
 
     loadDocument();
-  }, [id, isNew]);
+  }, [id]);
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setDocument((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleContentChange = (
-    section: string,
-    field: string,
-    value: string
-  ) => {
-    setDocument((prev) => ({
-      ...prev,
-      content: {
-        ...prev.content,
-        [section]: {
-          ...(prev.content?.[section] || {}),
-          [field]: value,
-        },
-      },
-    }));
-  };
-
-  const handleSave = async () => {
+  const handleSaveDocument = async (content: any) => {
     if (!user) {
-      toast.error("You must be logged in to save documents");
+      toast.error("Please sign in to save this document");
+      navigate("/login");
       return;
     }
 
-    setSaving(true);
-    try {
-      if (isNew) {
-        const newDoc = await createDocument(document, user.id);
-        if (newDoc) {
-          navigate(`/documents/${newDoc.id}`);
-        }
-      } else if (id) {
-        await updateDocument(id, document);
+    if (!document) return;
+
+    // Check if premium access is required
+    if (document.is_premium && !hasAccess(document.pricing_tier)) {
+      toast.error("Subscription required", {
+        description: `This is a ${document.pricing_tier} document. Please upgrade your subscription.`
+      });
+      navigate("/pricing");
+      return;
+    }
+
+    // If document belongs to template (public user), create new document
+    if (document.user_id === "00000000-0000-0000-0000-000000000000") {
+      const newDoc = await createDocument({
+        title: document.title,
+        description: document.description,
+        document_type: document.document_type,
+        content,
+        regions: document.regions,
+        is_premium: false, // User's created document is not premium
+      }, user.id);
+
+      if (newDoc) {
+        toast.success("Document created successfully!");
+        navigate(`/documents/${newDoc.id}`);
       }
-    } finally {
-      setSaving(false);
+    } else {
+      // Otherwise update existing document
+      const updatedDoc = await updateDocument(document.id, { content });
+      if (updatedDoc) {
+        setDocument(updatedDoc);
+        toast.success("Document saved successfully!");
+      }
     }
   };
 
-  const renderFormSection = (section: string, fields: { name: string; label: string }[]) => (
-    <div className="space-y-4">
-      {fields.map((field) => (
-        <div key={field.name} className="grid gap-2">
-          <Label htmlFor={`${section}-${field.name}`}>{field.label}</Label>
-          <Textarea
-            id={`${section}-${field.name}`}
-            value={document.content?.[section]?.[field.name] || ""}
-            onChange={(e) => handleContentChange(section, field.name, e.target.value)}
-            rows={4}
-          />
-        </div>
-      ))}
-    </div>
-  );
+  const handleDownload = () => {
+    if (!document) return;
 
-  if (loading) {
-    return (
-      <Layout>
-        <div className="container py-8">
+    // Create a downloadable text file
+    const content = JSON.stringify(document.content, null, 2);
+    const blob = new Blob([content], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${document.title.replace(/\s+/g, '_')}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast.success("Document downloaded successfully!");
+  };
+
+  const isPremiumLocked = document?.is_premium && user && !hasAccess(document.pricing_tier);
+
+  return (
+    <Layout>
+      <div className="container py-8">
+        <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <Button 
+            variant="ghost" 
+            className="gap-2 self-start"
+            onClick={() => navigate("/documents")}
+          >
+            <ArrowLeft size={16} />
+            Back to Documents
+          </Button>
+          
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              className="gap-2"
+              onClick={handleDownload}
+              disabled={loading || !document}
+            >
+              <Download size={16} />
+              Download
+            </Button>
+            <Button 
+              className="gap-2 bg-docsai-blue hover:bg-docsai-darkBlue"
+              onClick={() => document && handleSaveDocument(document.content)}
+              disabled={loading || !document || !user}
+            >
+              <Save size={16} />
+              Save Document
+            </Button>
+          </div>
+        </div>
+
+        {loading ? (
           <div className="flex justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-docsai-blue"></div>
           </div>
-        </div>
-      </Layout>
-    );
-  }
-
-  return (
-    <RequireAuth>
-      <Layout>
-        <div className="container py-8">
-          <div className="mb-6 flex items-center">
-            <Button
-              variant="ghost"
-              className="mr-4"
-              onClick={() => navigate("/documents")}
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Documents
-            </Button>
-            <h1 className="text-2xl font-bold md:text-3xl">
-              {isNew ? "Create New Document" : document.title}
-            </h1>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-3">
-            <Card className="p-6 md:col-span-1">
-              <div className="space-y-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="title">Document Title</Label>
-                  <Input
-                    id="title"
-                    name="title"
-                    value={document.title}
-                    onChange={handleInputChange}
-                    placeholder="Enter document title"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    name="description"
-                    value={document.description}
-                    onChange={handleInputChange}
-                    placeholder="Enter document description"
-                    rows={3}
-                  />
-                </div>
-                <Button
-                  className="w-full bg-docsai-blue hover:bg-docsai-darkBlue"
-                  onClick={handleSave}
-                  disabled={saving}
+        ) : document ? (
+          <>
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold mb-2">{document.title}</h1>
+              <p className="text-gray-600">{document.description}</p>
+            </div>
+            
+            {isPremiumLocked ? (
+              <div className="p-6 bg-amber-50 border border-amber-200 rounded-md text-center">
+                <h2 className="text-2xl font-bold text-amber-700 mb-4">Premium Document</h2>
+                <p className="mb-4 text-amber-800">
+                  This document requires a {document.pricing_tier} subscription to edit and save.
+                </p>
+                <Button 
+                  className="bg-amber-500 hover:bg-amber-600 text-white"
+                  onClick={() => navigate("/pricing")}
                 >
-                  {saving ? (
-                    <div className="flex items-center">
-                      <div className="mr-2 animate-spin rounded-full h-4 w-4 border-t-2 border-white"></div>
-                      Saving...
-                    </div>
-                  ) : (
-                    <div className="flex items-center">
-                      <Save className="mr-2 h-4 w-4" />
-                      Save Document
-                    </div>
-                  )}
+                  Upgrade Subscription
                 </Button>
               </div>
-            </Card>
-
-            <Card className="p-6 md:col-span-2">
-              <Tabs defaultValue="details">
-                <TabsList className="mb-4 w-full grid grid-cols-3">
-                  <TabsTrigger value="details">Details</TabsTrigger>
-                  <TabsTrigger value="terms">Terms</TabsTrigger>
-                  <TabsTrigger value="signatures">Signatures</TabsTrigger>
-                </TabsList>
-                <TabsContent value="details">
-                  {renderFormSection("details", [
-                    { name: "parties", label: "Parties Involved" },
-                    { name: "effectiveDate", label: "Effective Date" },
-                    { name: "purpose", label: "Purpose" },
-                    { name: "scope", label: "Scope" },
-                  ])}
-                </TabsContent>
-                <TabsContent value="terms">
-                  {renderFormSection("terms", [
-                    { name: "obligations", label: "Obligations" },
-                    { name: "restrictions", label: "Restrictions" },
-                    { name: "duration", label: "Duration" },
-                    { name: "termination", label: "Termination Conditions" },
-                  ])}
-                </TabsContent>
-                <TabsContent value="signatures">
-                  {renderFormSection("signatures", [
-                    { name: "party1", label: "Party 1 Signature Block" },
-                    { name: "party2", label: "Party 2 Signature Block" },
-                    { name: "witnesses", label: "Witnesses" },
-                    { name: "date", label: "Date of Signing" },
-                  ])}
-                </TabsContent>
-              </Tabs>
-            </Card>
+            ) : (
+              <DocumentFormGenerator 
+                document={document} 
+                onSave={handleSaveDocument}
+                readOnly={!user}
+              />
+            )}
+          </>
+        ) : (
+          <div className="py-12 text-center">
+            <p className="text-lg text-gray-500">Document not found.</p>
           </div>
-        </div>
-      </Layout>
-    </RequireAuth>
+        )}
+        
+        {!user && (
+          <div className="mt-8 p-6 bg-gray-50 rounded-lg border border-gray-200">
+            <h2 className="text-xl font-bold mb-2">Sign in to save your document</h2>
+            <p className="text-gray-600 mb-4">
+              You're currently in preview mode. Sign in or create an account to save your changes.
+            </p>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline"
+                onClick={() => navigate("/login")}
+              >
+                Sign In
+              </Button>
+              <Button 
+                className="bg-docsai-blue hover:bg-docsai-darkBlue"
+                onClick={() => navigate("/register")}
+              >
+                Create Account
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    </Layout>
   );
 }

@@ -17,6 +17,14 @@ export function Navbar() {
           <span className="text-xl font-bold text-docsai-blue">DocsAI</span>
           <span className="text-xl font-light text-docsai-darkGray">Global Scribe</span>
         </Link>
+        <div className="hidden md:flex items-center gap-4">
+          <Link to="/pricing" className="text-gray-600 hover:text-docsai-blue">
+            Pricing
+          </Link>
+          <Link to="/documents" className="text-gray-600 hover:text-docsai-blue">
+            Templates
+          </Link>
+        </div>
         <div className="flex items-center gap-4">
           {user ? (
             <>

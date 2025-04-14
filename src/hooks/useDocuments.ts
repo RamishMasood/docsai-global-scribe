@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { PostgrestError } from "@supabase/supabase-js";
 
 export interface Document {
   id: string;
@@ -12,22 +11,10 @@ export interface Document {
   content: any;
   regions: string[];
   is_premium: boolean;
+  pricing_tier: 'free' | 'basic' | 'premium';
   user_id: string;
   created_at: string;
   updated_at: string;
-}
-
-// Define the shape of our database for TypeScript
-interface Database {
-  public: {
-    Tables: {
-      documents: {
-        Row: Document;
-        Insert: Omit<Document, 'id' | 'created_at' | 'updated_at'> & { id?: string; created_at?: string; updated_at?: string };
-        Update: Partial<Document>;
-      };
-    };
-  };
 }
 
 export function useDocuments() {
@@ -38,7 +25,7 @@ export function useDocuments() {
 
   const fetchPublicTemplates = async () => {
     try {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("documents")
         .select("*")
         .eq("user_id", "00000000-0000-0000-0000-000000000000");
@@ -56,7 +43,7 @@ export function useDocuments() {
 
   const fetchUserDocuments = async (userId: string) => {
     try {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("documents")
         .select("*")
         .eq("user_id", userId)
@@ -77,7 +64,7 @@ export function useDocuments() {
 
   const getDocumentById = async (id: string) => {
     try {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("documents")
         .select("*")
         .eq("id", id)
@@ -104,7 +91,7 @@ export function useDocuments() {
         user_id: userId,
       };
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("documents")
         .insert(documentToInsert)
         .select();
@@ -128,7 +115,7 @@ export function useDocuments() {
 
   const updateDocument = async (id: string, updates: Partial<Document>) => {
     try {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("documents")
         .update(updates)
         .eq("id", id)
@@ -156,7 +143,7 @@ export function useDocuments() {
 
   const deleteDocument = async (id: string) => {
     try {
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from("documents")
         .delete()
         .eq("id", id);
@@ -179,6 +166,11 @@ export function useDocuments() {
     }
   };
 
+  // Function to filter documents by tier
+  const getDocumentsByTier = (tier: 'free' | 'basic' | 'premium') => {
+    return publicTemplates.filter(doc => doc.pricing_tier === tier);
+  };
+
   return {
     documents,
     publicTemplates,
@@ -190,5 +182,6 @@ export function useDocuments() {
     createDocument,
     updateDocument,
     deleteDocument,
+    getDocumentsByTier,
   };
 }

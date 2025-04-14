@@ -9,7 +9,81 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      documents: {
+        Row: {
+          content: Json
+          created_at: string
+          description: string
+          document_type: Database["public"]["Enums"]["document_type"]
+          id: string
+          is_premium: boolean
+          pricing_tier: Database["public"]["Enums"]["subscription_tier"]
+          regions: string[]
+          title: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          content?: Json
+          created_at?: string
+          description: string
+          document_type: Database["public"]["Enums"]["document_type"]
+          id?: string
+          is_premium?: boolean
+          pricing_tier?: Database["public"]["Enums"]["subscription_tier"]
+          regions?: string[]
+          title: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          description?: string
+          document_type?: Database["public"]["Enums"]["document_type"]
+          id?: string
+          is_premium?: boolean
+          pricing_tier?: Database["public"]["Enums"]["subscription_tier"]
+          regions?: string[]
+          title?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          starts_at: string
+          tier: Database["public"]["Enums"]["subscription_tier"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          starts_at?: string
+          tier?: Database["public"]["Enums"]["subscription_tier"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          starts_at?: string
+          tier?: Database["public"]["Enums"]["subscription_tier"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -18,7 +92,16 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      document_type:
+        | "nda"
+        | "employment_contract"
+        | "partnership_agreement"
+        | "rent_agreement"
+        | "invoice"
+        | "consulting_contract"
+        | "business_contract"
+        | "legal_notice"
+      subscription_tier: "free" | "basic" | "premium"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +216,18 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      document_type: [
+        "nda",
+        "employment_contract",
+        "partnership_agreement",
+        "rent_agreement",
+        "invoice",
+        "consulting_contract",
+        "business_contract",
+        "legal_notice",
+      ],
+      subscription_tier: ["free", "basic", "premium"],
+    },
   },
 } as const

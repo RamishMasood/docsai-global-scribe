@@ -8,6 +8,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Documents from "./pages/Documents";
 import DocumentForm from "./pages/DocumentForm";
+import Pricing from "./pages/Pricing";
 import NotFound from "./pages/NotFound";
 import { AuthProvider } from "./context/AuthContext";
 
@@ -25,6 +26,7 @@ const App = () => (
             <Route path="/register" element={<Register />} />
             <Route path="/documents" element={<Documents />} />
             <Route path="/documents/:id" element={<DocumentForm />} />
+            <Route path="/pricing" element={<Pricing />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
