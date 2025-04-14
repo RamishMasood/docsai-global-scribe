@@ -66,9 +66,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       navigate("/documents");
     } catch (error: any) {
-      toast("Sign in failed", {
-        description: error.message || "Failed to sign in. Please try again.",
-        variant: "destructive"
+      toast.error("Sign in failed", {
+        description: error.message || "Failed to sign in. Please try again."
       });
       throw error;
     }
@@ -92,15 +91,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw error;
       }
 
-      toast("Account created", {
+      toast.success("Account created", {
         description: "Please check your email to confirm your account."
       });
       
       navigate("/login");
     } catch (error: any) {
-      toast("Sign up failed", {
-        description: error.message || "Failed to create account. Please try again.",
-        variant: "destructive"
+      toast.error("Sign up failed", {
+        description: error.message || "Failed to create account. Please try again."
       });
       throw error;
     }
@@ -111,9 +109,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await supabase.auth.signOut();
       navigate("/");
     } catch (error: any) {
-      toast("Sign out failed", {
-        description: error.message || "Failed to sign out. Please try again.",
-        variant: "destructive"
+      toast.error("Sign out failed", {
+        description: error.message || "Failed to sign out. Please try again."
       });
     }
   };

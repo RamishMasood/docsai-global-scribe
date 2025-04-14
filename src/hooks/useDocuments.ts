@@ -24,11 +24,11 @@ export function useDocuments() {
 
   const fetchPublicTemplates = async () => {
     try {
-      // Use type assertion to work around TypeScript issues with Supabase types
-      const { data, error } = await supabase
+      // Use type assertion to handle TypeScript issues
+      const { data, error } = await (supabase
         .from("documents")
         .select("*")
-        .eq("user_id", "00000000-0000-0000-0000-000000000000") as any;
+        .eq("user_id", "00000000-0000-0000-0000-000000000000") as any);
 
       if (error) {
         throw error;
@@ -43,11 +43,11 @@ export function useDocuments() {
 
   const fetchUserDocuments = async (userId: string) => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase
         .from("documents")
         .select("*")
         .eq("user_id", userId)
-        .neq("user_id", "00000000-0000-0000-0000-000000000000") as any;
+        .neq("user_id", "00000000-0000-0000-0000-000000000000") as any);
 
       if (error) {
         throw error;
@@ -64,11 +64,11 @@ export function useDocuments() {
 
   const getDocumentById = async (id: string) => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase
         .from("documents")
         .select("*")
         .eq("id", id)
-        .single() as any;
+        .single() as any);
 
       if (error) {
         throw error;
@@ -77,7 +77,7 @@ export function useDocuments() {
       return data as Document;
     } catch (error: any) {
       console.error("Error fetching document:", error);
-      toast("Error", {
+      toast.error("Error", {
         description: `Failed to fetch document: ${error.message}`
       });
       return null;
@@ -91,24 +91,24 @@ export function useDocuments() {
         user_id: userId,
       };
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase
         .from("documents")
         .insert(documentToInsert as any)
-        .select() as any;
+        .select() as any);
 
       if (error) {
         throw error;
       }
 
       setDocuments((prev) => [...prev, data[0] as Document]);
-      toast("Success", {
+      toast.success("Success", {
         description: "Document created successfully"
       });
       
       return data[0] as Document;
     } catch (error: any) {
       console.error("Error creating document:", error);
-      toast("Error", {
+      toast.error("Error", {
         description: `Failed to create document: ${error.message}`
       });
       return null;
@@ -117,11 +117,11 @@ export function useDocuments() {
 
   const updateDocument = async (id: string, updates: Partial<Document>) => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase
         .from("documents")
         .update(updates as any)
         .eq("id", id)
-        .select() as any;
+        .select() as any);
 
       if (error) {
         throw error;
@@ -131,14 +131,14 @@ export function useDocuments() {
         prev.map((doc) => (doc.id === id ? { ...doc, ...data[0] } as Document : doc))
       );
       
-      toast("Success", {
+      toast.success("Success", {
         description: "Document updated successfully"
       });
       
       return data[0] as Document;
     } catch (error: any) {
       console.error("Error updating document:", error);
-      toast("Error", {
+      toast.error("Error", {
         description: `Failed to update document: ${error.message}`
       });
       return null;
@@ -147,10 +147,10 @@ export function useDocuments() {
 
   const deleteDocument = async (id: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase
         .from("documents")
         .delete()
-        .eq("id", id) as any;
+        .eq("id", id) as any);
 
       if (error) {
         throw error;
@@ -158,14 +158,14 @@ export function useDocuments() {
 
       setDocuments((prev) => prev.filter((doc) => doc.id !== id));
       
-      toast("Success", {
+      toast.success("Success", {
         description: "Document deleted successfully"
       });
       
       return true;
     } catch (error: any) {
       console.error("Error deleting document:", error);
-      toast("Error", {
+      toast.error("Error", {
         description: `Failed to delete document: ${error.message}`
       });
       return false;

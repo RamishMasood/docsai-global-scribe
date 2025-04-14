@@ -1,33 +1,11 @@
-import { useToast } from "@/hooks/use-toast"
-import {
-  Toast,
-  ToastClose,
-  ToastDescription,
-  ToastProvider,
-  ToastTitle,
-  ToastViewport,
-} from "@/components/ui/toast"
 
-export function Toaster() {
-  const { toasts } = useToast()
+import { Toaster } from "sonner";
 
-  return (
-    <ToastProvider>
-      {toasts.map(function ({ id, title, description, action, ...props }) {
-        return (
-          <Toast key={id} {...props}>
-            <div className="grid gap-1">
-              {title && <ToastTitle>{title}</ToastTitle>}
-              {description && (
-                <ToastDescription>{description}</ToastDescription>
-              )}
-            </div>
-            {action}
-            <ToastClose />
-          </Toast>
-        )
-      })}
-      <ToastViewport />
-    </ToastProvider>
-  )
+export function ShadcnToaster() {
+  // This is just a placeholder component to maintain compatibility
+  // with any code that might import the old shadcn Toaster
+  return null;
 }
+
+// Re-export sonner's Toaster component as our default Toaster
+export { Toaster };
