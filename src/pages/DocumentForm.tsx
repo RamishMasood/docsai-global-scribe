@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Save, Download, Share, Loader } from "lucide-react";
+import { ArrowLeft, Save, Download, Loader } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useDocuments, Document } from "@/hooks/useDocuments";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -27,6 +27,7 @@ export default function DocumentForm() {
   const { getDocumentById, createDocument, updateDocument, documents, fetchUserDocuments } = useDocuments();
   const { hasAccess, subscription } = useSubscription(user?.id);
   const navigate = useNavigate();
+  const [isSaving, setIsSaving] = useState(false);
 
   // Load document data
   useEffect(() => {
@@ -74,8 +75,11 @@ export default function DocumentForm() {
 
     if (!documentData) return;
 
+    setIsSaving(true);
+
     // Check if premium access is required
     if (documentData.is_premium && !hasAccess(documentData.pricing_tier)) {
+      setIsSaving(false);
       toast.error("Subscription required", {
         description: `This is a ${documentData.pricing_tier} document. Please upgrade your subscription.`
       });
@@ -86,6 +90,7 @@ export default function DocumentForm() {
     // Check free user document limit (only for new documents)
     const isNewDocumentFromTemplate = documentData.user_id === "00000000-0000-0000-0000-000000000000";
     if (isNewDocumentFromTemplate && subscription?.tier === "free" && documents.length >= 3) {
+      setIsSaving(false);
       toast.error("Free plan limit reached", {
         description: "You can only create up to 3 documents with the free plan. Please upgrade to create more."
       });
@@ -93,45 +98,44 @@ export default function DocumentForm() {
       return;
     }
 
-    // If document belongs to template (public user), create new document
-    if (isNewDocumentFromTemplate) {
-      toast.loading("Creating document...");
-      const newDoc = await createDocument({
-        title: documentData.title,
-        description: documentData.description,
-        document_type: documentData.document_type,
-        content,
-        regions: documentData.regions,
-        is_premium: false, // User's created document is not premium
-      }, user.id);
+    try {
+      // If document belongs to template (public user), create new document
+      if (isNewDocumentFromTemplate) {
+        const newDoc = await createDocument({
+          title: documentData.title,
+          description: documentData.description,
+          document_type: documentData.document_type,
+          content,
+          regions: documentData.regions,
+          is_premium: false, // User's created document is not premium
+        }, user.id);
 
-      if (newDoc) {
-        toast.dismiss();
-        toast.success("Document created successfully!");
-        navigate(`/documents/${newDoc.id}`);
+        if (newDoc) {
+          toast.success("Document created successfully!");
+          navigate(`/documents/${newDoc.id}`);
+        } else {
+          toast.error("Failed to create document");
+        }
       } else {
-        toast.dismiss();
-        toast.error("Failed to create document");
+        // Otherwise update existing document
+        const updatedDoc = await updateDocument(documentData.id, { content });
+        if (updatedDoc) {
+          setDocumentData(updatedDoc);
+          toast.success("Document saved successfully!");
+        } else {
+          toast.error("Failed to save document");
+        }
       }
-    } else {
-      // Otherwise update existing document
-      toast.loading("Saving document...");
-      const updatedDoc = await updateDocument(documentData.id, { content });
-      toast.dismiss();
-      if (updatedDoc) {
-        setDocumentData(updatedDoc);
-        toast.success("Document saved successfully!");
-      } else {
-        toast.error("Failed to save document");
-      }
+    } catch (err) {
+      console.error("Error saving document:", err);
+      toast.error("An error occurred while saving");
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleDownload = async () => {
     if (!documentData) return;
-    
-    // The download functionality is now handled by the DocumentFormGenerator component
-    // This is kept for backwards compatibility
     toast.success("Document downloaded successfully!");
   };
 
@@ -151,7 +155,13 @@ export default function DocumentForm() {
           </Button>
           
           <div className="py-12 text-center">
-            <p className="text-lg text-gray-500">{error}</p>
+            <p className="text-lg text-red-500">{error}</p>
+            <Button 
+              onClick={() => navigate("/documents")} 
+              className="mt-4"
+            >
+              View All Documents
+            </Button>
           </div>
         </div>
       </Layout>
@@ -186,10 +196,19 @@ export default function DocumentForm() {
                 <Button 
                   className="gap-2 bg-docsai-blue hover:bg-docsai-darkBlue"
                   onClick={() => documentData && handleSaveDocument(documentData.content)}
-                  disabled={loading || !documentData || !user}
+                  disabled={loading || !documentData || !user || isSaving}
                 >
-                  <Save size={16} />
-                  Save Document
+                  {isSaving ? (
+                    <>
+                      <Loader size={16} className="animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save size={16} />
+                      Save Document
+                    </>
+                  )}
                 </Button>
               </>
             )}
@@ -265,7 +284,13 @@ export default function DocumentForm() {
           </>
         ) : (
           <div className="py-12 text-center">
-            <p className="text-lg text-gray-500">Document not found.</p>
+            <p className="text-lg text-gray-500">Document not found or failed to load.</p>
+            <Button 
+              onClick={() => navigate("/documents")} 
+              className="mt-4"
+            >
+              Browse Documents
+            </Button>
           </div>
         )}
         

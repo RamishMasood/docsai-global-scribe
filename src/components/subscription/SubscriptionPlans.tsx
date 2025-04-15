@@ -89,7 +89,7 @@ export function SubscriptionPlans() {
               </li>
               <li className="flex items-center gap-2">
                 <Check className="h-5 w-5 text-green-500" />
-                <span>Global region support</span>
+                <span>US, EU & Global region support</span>
               </li>
               <li className="flex items-center gap-2">
                 <Check className="h-5 w-5 text-green-500" />
@@ -138,7 +138,7 @@ export function SubscriptionPlans() {
               </li>
               <li className="flex items-center gap-2">
                 <Check className="h-5 w-5 text-green-500" />
-                <span>Regional legal compliance</span>
+                <span>Middle East & Asian region compliance</span>
               </li>
               <li className="flex items-center gap-2">
                 <Check className="h-5 w-5 text-green-500" />
@@ -156,7 +156,7 @@ export function SubscriptionPlans() {
               onClick={() => handleSubscribe('basic')}
               disabled={isProcessing || (user && hasAccess('basic'))}
             >
-              {getButtonText('basic')}
+              {isProcessing && subscription?.tier !== 'basic' ? 'Processing...' : getButtonText('basic')}
             </Button>
           </CardFooter>
         </Card>
@@ -201,7 +201,7 @@ export function SubscriptionPlans() {
               onClick={() => handleSubscribe('premium')}
               disabled={isProcessing || (user && hasAccess('premium'))}
             >
-              {getButtonText('premium')}
+              {isProcessing && subscription?.tier !== 'premium' ? 'Processing...' : getButtonText('premium')}
             </Button>
           </CardFooter>
         </Card>
