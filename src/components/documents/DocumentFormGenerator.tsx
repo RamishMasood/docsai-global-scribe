@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -7,6 +6,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Document } from "@/hooks/useDocuments";
 import { DatePicker } from "@/components/ui/date-picker";
+import { Download, Save } from "lucide-react";
+import { jsPDF } from "jspdf";
+import 'jspdf-autotable';
+import { useToast } from "@/hooks/use-toast";
 
 interface DocumentFormGeneratorProps {
   document: Document;
@@ -16,6 +19,7 @@ interface DocumentFormGeneratorProps {
 
 export function DocumentFormGenerator({ document, onSave, readOnly = false }: DocumentFormGeneratorProps) {
   const [formContent, setFormContent] = useState<any>(document.content || {});
+  const { toast } = useToast();
 
   useEffect(() => {
     setFormContent(document.content || {});
@@ -56,6 +60,70 @@ export function DocumentFormGenerator({ document, onSave, readOnly = false }: Do
 
   const handleSave = () => {
     onSave(formContent);
+  };
+
+  const generatePDF = () => {
+    const doc = new jsPDF();
+    
+    // Add document title
+    doc.setFontSize(20);
+    doc.text(document.title, 20, 20);
+    
+    // Add company info if available
+    doc.setFontSize(12);
+    doc.text(document.description, 20, 30);
+    
+    let yPos = 50;
+    
+    // Add document content
+    Object.keys(formContent).forEach(section => {
+      // Add section title
+      doc.setFontSize(14);
+      doc.text(section.charAt(0).toUpperCase() + section.slice(1), 20, yPos);
+      yPos += 10;
+      
+      // Add section content
+      doc.setFontSize(10);
+      const sectionData = formContent[section];
+      
+      if (section === 'items' && Array.isArray(sectionData)) {
+        const tableData = sectionData.map(item => [
+          item.description || '',
+          item.quantity || '',
+          item.price || '',
+          ((parseFloat(item.quantity || 0) * parseFloat(item.price || 0)).toFixed(2))
+        ]);
+        
+        (doc as any).autoTable({
+          startY: yPos,
+          head: [['Description', 'Quantity', 'Price', 'Total']],
+          body: tableData,
+        });
+        
+        yPos = (doc as any).lastAutoTable.finalY + 10;
+      } else if (typeof sectionData === 'object') {
+        Object.keys(sectionData).forEach(field => {
+          const fieldText = `${field.charAt(0).toUpperCase() + field.slice(1)}: ${sectionData[field] || ''}`;
+          doc.text(fieldText, 20, yPos);
+          yPos += 6;
+          
+          // Add new page if needed
+          if (yPos > 280) {
+            doc.addPage();
+            yPos = 20;
+          }
+        });
+      }
+      
+      yPos += 10;
+    });
+    
+    // Save document
+    doc.save(`${document.title}.pdf`);
+    toast({
+      title: "PDF Generated",
+      description: `${document.title}.pdf has been downloaded`,
+    });
   };
 
   const renderNdaForm = () => (
@@ -601,13 +669,23 @@ export function DocumentFormGenerator({ document, onSave, readOnly = false }: Do
   return (
     <div className="space-y-6">
       {renderForm()}
-      {!readOnly && (
-        <div className="flex justify-end">
-          <Button onClick={handleSave} className="bg-docsai-blue hover:bg-docsai-darkBlue">
+      <div className="flex justify-end gap-2">
+        <Button 
+          variant="outline" 
+          className="gap-2"
+          onClick={generatePDF}
+        >
+          <Download size={16} />
+          Download PDF
+        </Button>
+        
+        {!readOnly && (
+          <Button onClick={handleSave} className="bg-docsai-blue hover:bg-docsai-darkBlue gap-2">
+            <Save size={16} />
             Save Document
           </Button>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

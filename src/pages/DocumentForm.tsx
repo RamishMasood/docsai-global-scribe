@@ -2,12 +2,21 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Save, Download, Share } from "lucide-react";
+import { ArrowLeft, Save, Download, Share, Loader } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useDocuments, Document } from "@/hooks/useDocuments";
 import { useSubscription } from "@/hooks/useSubscription";
 import { DocumentFormGenerator } from "@/components/documents/DocumentFormGenerator";
 import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
+
+function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return <div className={`border rounded-lg shadow-sm ${className}`}>{children}</div>;
+}
+
+function CardContent({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return <div className={`p-6 ${className}`}>{children}</div>;
+}
 
 export default function DocumentForm() {
   const { id } = useParams<{ id: string }>();
@@ -15,7 +24,7 @@ export default function DocumentForm() {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { getDocumentById, createDocument, updateDocument } = useDocuments();
-  const { hasAccess } = useSubscription(user?.id);
+  const { hasAccess, subscription } = useSubscription(user?.id);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -35,7 +44,7 @@ export default function DocumentForm() {
     };
 
     loadDocument();
-  }, [id]);
+  }, [id, getDocumentById, navigate]);
 
   const handleSaveDocument = async (content: any) => {
     if (!user) {
@@ -57,6 +66,7 @@ export default function DocumentForm() {
 
     // If document belongs to template (public user), create new document
     if (documentData.user_id === "00000000-0000-0000-0000-000000000000") {
+      toast.loading("Creating document...");
       const newDoc = await createDocument({
         title: documentData.title,
         description: documentData.description,
@@ -67,34 +77,32 @@ export default function DocumentForm() {
       }, user.id);
 
       if (newDoc) {
+        toast.dismiss();
         toast.success("Document created successfully!");
         navigate(`/documents/${newDoc.id}`);
+      } else {
+        toast.dismiss();
+        toast.error("Failed to create document");
       }
     } else {
       // Otherwise update existing document
+      toast.loading("Saving document...");
       const updatedDoc = await updateDocument(documentData.id, { content });
+      toast.dismiss();
       if (updatedDoc) {
         setDocumentData(updatedDoc);
         toast.success("Document saved successfully!");
+      } else {
+        toast.error("Failed to save document");
       }
     }
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!documentData) return;
-
-    // Create a downloadable text file
-    const content = JSON.stringify(documentData.content, null, 2);
-    const blob = new Blob([content], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = window.document.createElement('a');
-    a.href = url;
-    a.download = `${documentData.title.replace(/\s+/g, '_')}.json`;
-    window.document.body.appendChild(a);
-    a.click();
-    window.document.body.removeChild(a);
-    URL.revokeObjectURL(url);
     
+    // The download functionality is now handled by the DocumentFormGenerator component
+    // This is kept for backwards compatibility
     toast.success("Document downloaded successfully!");
   };
 
@@ -135,14 +143,49 @@ export default function DocumentForm() {
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-docsai-blue"></div>
+          <div className="space-y-6">
+            <div className="mb-8">
+              <Skeleton className="h-8 w-3/4 mb-2" />
+              <Skeleton className="h-4 w-1/2" />
+            </div>
+            
+            <Card className="mb-6">
+              <CardContent className="p-6">
+                <Skeleton className="h-6 w-1/4 mb-4" />
+                <div className="space-y-4">
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="mb-6">
+              <CardContent className="p-6">
+                <Skeleton className="h-6 w-1/4 mb-4" />
+                <div className="space-y-4">
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+              </CardContent>
+            </Card>
           </div>
         ) : documentData ? (
           <>
             <div className="mb-8">
               <h1 className="text-3xl font-bold mb-2">{documentData.title}</h1>
               <p className="text-gray-600">{documentData.description}</p>
+              {documentData.regions && documentData.regions.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {documentData.regions.map((region) => (
+                    <span key={region} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                      {region}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
             
             {isPremiumLocked ? (
