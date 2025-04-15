@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -6,6 +5,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { Json } from "@/integrations/supabase/types";
 
 // Define the valid document types from the database schema
+// IMPORTANT: These must match exactly what's in the Supabase database enum
 export type DocumentType = 
   | "nda"
   | "employment_contract"
@@ -14,8 +14,13 @@ export type DocumentType =
   | "invoice"
   | "consulting_contract"
   | "business_contract"
-  | "legal_notice"
-  | "power_of_attorney"  // New document types
+  | "legal_notice";
+
+// These are additional document types we want to support in the UI
+// but are not yet in the database schema
+export type UIDocumentType = 
+  | DocumentType
+  | "power_of_attorney"
   | "lease_agreement"
   | "service_agreement"
   | "loan_agreement"
@@ -140,13 +145,18 @@ export function useDocuments() {
         }
       }
       
-      // Ensure the document type is valid
-      const documentType = newDocument.document_type as DocumentType;
+      // Ensure the document type is valid for the database
+      if (!isValidDatabaseDocumentType(newDocument.document_type)) {
+        toast.error("Invalid document type", {
+          description: "The selected document type is not supported in the database."
+        });
+        return null;
+      }
       
       const documentToInsert = {
         title: newDocument.title,
         description: newDocument.description,
-        document_type: documentType,
+        document_type: newDocument.document_type,
         content: newDocument.content || {},
         regions: newDocument.regions || ['Global'],
         is_premium: newDocument.is_premium || false,
@@ -178,6 +188,14 @@ export function useDocuments() {
 
   const updateDocument = async (id: string, updates: Partial<Document>) => {
     try {
+      // If we're updating the document type, make sure it's valid
+      if (updates.document_type && !isValidDatabaseDocumentType(updates.document_type)) {
+        toast.error("Invalid document type", {
+          description: "The selected document type is not supported in the database."
+        });
+        return null;
+      }
+
       const { data, error } = await supabase
         .from("documents")
         .update(updates)
@@ -229,27 +247,37 @@ export function useDocuments() {
     }
   };
 
-  // Function to check if user has reached document limit
   const hasReachedFreeLimit = (userId: string) => {
     return documents.length >= 3;
   };
 
-  // Function to filter documents by tier
   const getDocumentsByTier = (tier: PricingTier) => {
     return publicTemplates.filter(doc => doc.pricing_tier === tier);
   };
 
-  // Function to filter documents by region
   const getDocumentsByRegion = (region: string) => {
     if (!region) return publicTemplates;
     return publicTemplates.filter(doc => doc.regions?.includes(region));
   };
 
-  // Function to get document types for a specific region
   const getDocumentTypesByRegion = (region: string) => {
     if (!region) return [];
     const regionDocs = getDocumentsByRegion(region);
     return [...new Set(regionDocs.map(doc => doc.document_type))];
+  };
+
+  const isValidDatabaseDocumentType = (type: string): type is DocumentType => {
+    const validTypes: DocumentType[] = [
+      "nda",
+      "employment_contract",
+      "partnership_agreement",
+      "rent_agreement",
+      "invoice",
+      "consulting_contract",
+      "business_contract",
+      "legal_notice"
+    ];
+    return validTypes.includes(type as DocumentType);
   };
 
   return {
