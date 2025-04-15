@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -121,8 +122,7 @@ export function DocumentFormGenerator({ document, onSave, readOnly = false }: Do
     // Save document
     doc.save(`${document.title}.pdf`);
     toast({
-      title: "PDF Generated",
-      description: `${document.title}.pdf has been downloaded`,
+      description: `${document.title}.pdf has been downloaded`
     });
   };
 
