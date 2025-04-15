@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -10,7 +9,7 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { Download, Save } from "lucide-react";
 import { jsPDF } from "jspdf";
 import 'jspdf-autotable';
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 interface DocumentFormGeneratorProps {
   document: Document;
@@ -20,7 +19,6 @@ interface DocumentFormGeneratorProps {
 
 export function DocumentFormGenerator({ document, onSave, readOnly = false }: DocumentFormGeneratorProps) {
   const [formContent, setFormContent] = useState<any>(document.content || {});
-  const { toast } = useToast();
 
   useEffect(() => {
     setFormContent(document.content || {});
@@ -121,9 +119,7 @@ export function DocumentFormGenerator({ document, onSave, readOnly = false }: Do
     
     // Save document
     doc.save(`${document.title}.pdf`);
-    toast({
-      description: `${document.title}.pdf has been downloaded`
-    });
+    toast(`${document.title}.pdf has been downloaded`);
   };
 
   const renderNdaForm = () => (
@@ -625,7 +621,6 @@ export function DocumentFormGenerator({ document, onSave, readOnly = false }: Do
     );
   };
 
-  // Render different forms based on document type
   const renderForm = () => {
     switch (document.document_type) {
       case 'nda':
