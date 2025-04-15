@@ -22,29 +22,48 @@ export default function DocumentForm() {
   const { id } = useParams<{ id: string }>();
   const [documentData, setDocumentData] = useState<Document | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
-  const { getDocumentById, createDocument, updateDocument } = useDocuments();
+  const { getDocumentById, createDocument, updateDocument, documents, fetchUserDocuments } = useDocuments();
   const { hasAccess, subscription } = useSubscription(user?.id);
   const navigate = useNavigate();
 
+  // Load document data
   useEffect(() => {
     const loadDocument = async () => {
-      if (!id) return;
-      
-      setLoading(true);
-      const doc = await getDocumentById(id);
-      
-      if (doc) {
-        setDocumentData(doc);
-      } else {
-        toast.error("Document not found");
-        navigate("/documents");
+      if (!id) {
+        setLoading(false);
+        return;
       }
-      setLoading(false);
+      
+      try {
+        setLoading(true);
+        const doc = await getDocumentById(id);
+        
+        if (doc) {
+          setDocumentData(doc);
+        } else {
+          setError("Document not found");
+          toast.error("Document not found");
+        }
+      } catch (err) {
+        console.error("Error loading document:", err);
+        setError("Failed to load document");
+        toast.error("Failed to load document");
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadDocument();
-  }, [id, getDocumentById, navigate]);
+  }, [id, getDocumentById]);
+
+  // Ensure user documents are loaded (for document count)
+  useEffect(() => {
+    if (user) {
+      fetchUserDocuments(user.id);
+    }
+  }, [user, fetchUserDocuments]);
 
   const handleSaveDocument = async (content: any) => {
     if (!user) {
@@ -64,8 +83,18 @@ export default function DocumentForm() {
       return;
     }
 
+    // Check free user document limit (only for new documents)
+    const isNewDocumentFromTemplate = documentData.user_id === "00000000-0000-0000-0000-000000000000";
+    if (isNewDocumentFromTemplate && subscription?.tier === "free" && documents.length >= 3) {
+      toast.error("Free plan limit reached", {
+        description: "You can only create up to 3 documents with the free plan. Please upgrade to create more."
+      });
+      navigate("/pricing");
+      return;
+    }
+
     // If document belongs to template (public user), create new document
-    if (documentData.user_id === "00000000-0000-0000-0000-000000000000") {
+    if (isNewDocumentFromTemplate) {
       toast.loading("Creating document...");
       const newDoc = await createDocument({
         title: documentData.title,
@@ -108,6 +137,27 @@ export default function DocumentForm() {
 
   const isPremiumLocked = documentData?.is_premium && user && !hasAccess(documentData.pricing_tier);
 
+  if (error && !loading && !documentData) {
+    return (
+      <Layout>
+        <div className="container py-8">
+          <Button 
+            variant="ghost" 
+            className="gap-2 mb-8"
+            onClick={() => navigate("/documents")}
+          >
+            <ArrowLeft size={16} />
+            Back to Documents
+          </Button>
+          
+          <div className="py-12 text-center">
+            <p className="text-lg text-gray-500">{error}</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <div className="container py-8">
@@ -122,23 +172,27 @@ export default function DocumentForm() {
           </Button>
           
           <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              className="gap-2"
-              onClick={handleDownload}
-              disabled={loading || !documentData}
-            >
-              <Download size={16} />
-              Download
-            </Button>
-            <Button 
-              className="gap-2 bg-docsai-blue hover:bg-docsai-darkBlue"
-              onClick={() => documentData && handleSaveDocument(documentData.content)}
-              disabled={loading || !documentData || !user}
-            >
-              <Save size={16} />
-              Save Document
-            </Button>
+            {!loading && documentData && (
+              <>
+                <Button 
+                  variant="outline" 
+                  className="gap-2"
+                  onClick={handleDownload}
+                  disabled={loading || !documentData}
+                >
+                  <Download size={16} />
+                  Download
+                </Button>
+                <Button 
+                  className="gap-2 bg-docsai-blue hover:bg-docsai-darkBlue"
+                  onClick={() => documentData && handleSaveDocument(documentData.content)}
+                  disabled={loading || !documentData || !user}
+                >
+                  <Save size={16} />
+                  Save Document
+                </Button>
+              </>
+            )}
           </div>
         </div>
 

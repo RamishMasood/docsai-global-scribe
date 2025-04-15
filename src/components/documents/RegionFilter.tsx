@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,26 +10,55 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
-// Extended list of regions
+// Extended list of regions with additional countries
 const regions = [
   "Global",
+  // Continents
   "North America",
   "Europe",
   "Asia",
   "Australia",
   "Africa",
   "South America",
+  // Western Countries
   "United States",
   "United Kingdom",
-  "European Union",
   "Canada",
-  "India",
-  "Pakistan",
+  "European Union",
+  // Middle East
+  "Middle East",
   "United Arab Emirates",
   "Saudi Arabia",
   "Qatar",
-  "Middle East",
+  "Bahrain",
+  "Kuwait",
+  "Oman",
+  // South Asia
+  "India",
+  "Pakistan",
+  "Bangladesh",
+  // East Asia
+  "China",
+  "Japan",
+  "South Korea",
+  // Southeast Asia
+  "Singapore",
+  "Malaysia",
+  "Indonesia",
+  "Thailand",
+  // Others
+  "Russia",
+  "Brazil",
+  "Mexico",
+  "South Africa",
+  "Nigeria",
+  "Egypt",
+  "Turkey",
+  "Australia",
+  "New Zealand",
 ];
 
 interface RegionFilterProps {
@@ -52,6 +80,13 @@ export function RegionFilter({ selectedRegion, onChange, loading = false }: Regi
     return <Skeleton className="h-10 w-40" />;
   }
 
+  // Group regions by area for better organization
+  const continents = regions.filter(r => 
+    ["Global", "North America", "Europe", "Asia", "Australia", "Africa", "South America", "Middle East"].includes(r));
+  
+  const majorCountries = regions.filter(r => 
+    !["Global", "North America", "Europe", "Asia", "Australia", "Africa", "South America", "Middle East"].includes(r));
+
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
@@ -62,14 +97,24 @@ export function RegionFilter({ selectedRegion, onChange, loading = false }: Regi
           </div>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56 max-h-[60vh] overflow-y-auto">
+      <DropdownMenuContent className="w-56 max-h-[60vh] overflow-y-auto bg-white">
         <DropdownMenuLabel>Filter by Region</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => handleSelect("")} className="cursor-pointer">
           {!selectedRegion && <span className="mr-2">✓</span>}
           <span>All Regions</span>
         </DropdownMenuItem>
-        {regions.map((region) => (
+        
+        <DropdownMenuLabel className="text-xs text-gray-500 mt-2">Continents & Regions</DropdownMenuLabel>
+        {continents.filter(r => r !== "Global").map((region) => (
+          <DropdownMenuItem key={region} onClick={() => handleSelect(region)} className="cursor-pointer">
+            {selectedRegion === region && <span className="mr-2">✓</span>}
+            <span>{region}</span>
+          </DropdownMenuItem>
+        ))}
+        
+        <DropdownMenuLabel className="text-xs text-gray-500 mt-2">Countries</DropdownMenuLabel>
+        {majorCountries.map((region) => (
           <DropdownMenuItem key={region} onClick={() => handleSelect(region)} className="cursor-pointer">
             {selectedRegion === region && <span className="mr-2">✓</span>}
             <span>{region}</span>

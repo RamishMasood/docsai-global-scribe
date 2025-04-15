@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useSubscription } from "@/hooks/useSubscription";
 import { Json } from "@/integrations/supabase/types";
 
 // Define the valid document types from the database schema
@@ -13,7 +14,13 @@ export type DocumentType =
   | "invoice"
   | "consulting_contract"
   | "business_contract"
-  | "legal_notice";
+  | "legal_notice"
+  | "power_of_attorney"  // New document types
+  | "lease_agreement"
+  | "service_agreement"
+  | "loan_agreement"
+  | "promissory_note"
+  | "bill_of_sale";
 
 // Define the valid subscription tiers
 export type PricingTier = "free" | "basic" | "premium";
@@ -115,6 +122,24 @@ export function useDocuments() {
 
   const createDocument = async (newDocument: DocumentInsert, userId: string) => {
     try {
+      // Check free tier document limit
+      if (documents.length >= 3) {
+        const { data } = await supabase
+          .from("subscriptions")
+          .select("tier")
+          .eq("user_id", userId)
+          .single();
+          
+        const userTier = data?.tier || 'free';
+        
+        if (userTier === 'free') {
+          toast.error("Free plan limit reached", {
+            description: "You can only create up to 3 documents with the free plan. Please upgrade to create more."
+          });
+          return null;
+        }
+      }
+      
       // Ensure the document type is valid
       const documentType = newDocument.document_type as DocumentType;
       
@@ -204,6 +229,11 @@ export function useDocuments() {
     }
   };
 
+  // Function to check if user has reached document limit
+  const hasReachedFreeLimit = (userId: string) => {
+    return documents.length >= 3;
+  };
+
   // Function to filter documents by tier
   const getDocumentsByTier = (tier: PricingTier) => {
     return publicTemplates.filter(doc => doc.pricing_tier === tier);
@@ -212,7 +242,14 @@ export function useDocuments() {
   // Function to filter documents by region
   const getDocumentsByRegion = (region: string) => {
     if (!region) return publicTemplates;
-    return publicTemplates.filter(doc => doc.regions.includes(region));
+    return publicTemplates.filter(doc => doc.regions?.includes(region));
+  };
+
+  // Function to get document types for a specific region
+  const getDocumentTypesByRegion = (region: string) => {
+    if (!region) return [];
+    const regionDocs = getDocumentsByRegion(region);
+    return [...new Set(regionDocs.map(doc => doc.document_type))];
   };
 
   return {
@@ -228,5 +265,7 @@ export function useDocuments() {
     deleteDocument,
     getDocumentsByTier,
     getDocumentsByRegion,
+    getDocumentTypesByRegion,
+    hasReachedFreeLimit,
   };
 }
